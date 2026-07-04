@@ -1,7 +1,6 @@
 Flask
 flask-cors
-paddlepaddle ; sys_platform == 'linux'
-paddleocr ; sys_platform == 'linux'
+zhipuai
 numpy
 opencv-python-headless
 gspread
