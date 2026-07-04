@@ -8,7 +8,7 @@ import re
 import os
 import json
 import base64
-from paddleocr import PaddleOCR
+from zhipuai import ZhipuAI
 from dateutil.relativedelta import relativedelta
 from calendar import monthrange
 import gspread
@@ -39,8 +39,8 @@ validity_months = {"3年": 36, "2.5年": 30, "2年": 24, "1.5年": 18, "1年": 1
 in_advance_days_dict = {"当天": 0, "提前1天": 1, "提前2天": 2, "提前3天": 3, "提前4天": 4, "提前5天": 5}
 shifts_dict = {"夜班": "1", "早班": "2", "中班": "3"}
 
-# Initialize PaddleOCR
-ocr = PaddleOCR(use_angle_cls=True, lang="ch")
+# Initialize ZhipuAI
+# The SDK automatically uses the ZHIPUAI_API_KEY environment variable.
 
 SPREADSHEET_ID = '1L4rVsLqZuCjdzyfPt7BzE5Ei-LtKlN_m5y2NbnhoeJc'
 SHEET_NAME = 'Sheet1'
@@ -78,17 +78,39 @@ def setup_google_sheets():
 
 worksheet = setup_google_sheets()
 
-def perform_ocr_on_image(image_np_for_ocr):
+def perform_ocr_on_image(image_bytes):
     try:
-        gray = cv2.cvtColor(image_np_for_ocr, cv2.COLOR_BGR2GRAY)
-        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
-        enhanced_gray = clahe.apply(gray)
-        kernel = np.array([[0, -1, 0], [-1, 5, -1], [0, -1, 0]])
-        sharp = cv2.filter2D(enhanced_gray, -1, kernel)
-        result = ocr.ocr(sharp, cls=True)
-        if result is None or not result[0]:
+        client = ZhipuAI() # uses ZHIPUAI_API_KEY env var
+        
+        # Encode image to base64
+        img_base64 = base64.b64encode(image_bytes).decode('utf-8')
+        
+        # Call Zhipu AI Vision Model
+        response = client.chat.completions.create(
+            model="glm-4v",
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": "Please extract the text, production date code, and serial numbers from this image. Only return the exact text you see, without any conversational explanations."
+                        },
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:image/jpeg;base64,{img_base64}"
+                            }
+                        }
+                    ]
+                }
+            ]
+        )
+        
+        if not response.choices or not response.choices[0].message.content:
             return ""
-        raw_text = ''.join([line[1][0] for line in result[0]])
+            
+        raw_text = response.choices[0].message.content
         processed_text = raw_text.upper()
         for key, value in GENERAL_CORRECTIONS.items():
             processed_text = processed_text.replace(key, value)
@@ -192,13 +214,15 @@ def process_ocr():
             return jsonify({'error': 'No image provided'}), 400
             
         in_memory_file = file.read()
+        
+        # We still decode with cv2 to validate it's an image, but pass the raw bytes to Zhipu
         nparr = np.frombuffer(in_memory_file, np.uint8)
         img_np = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
         
         if img_np is None:
             return jsonify({'error': 'Invalid image format'}), 400
 
-        ocr_result_text = perform_ocr_on_image(img_np)
+        ocr_result_text = perform_ocr_on_image(in_memory_file)
         correct_answer_text = calculate_correct_answer(line, front_back, serial, validity, advance, shift)
         
         rate = 0.0
