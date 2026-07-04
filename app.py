@@ -51,16 +51,24 @@ SCOPES = [
 
 def setup_google_sheets():
     try:
-        encoded_creds = os.environ.get("GOOGLE_CREDENTIALS_BASE64")
-        if not encoded_creds:
-            print("GOOGLE_CREDENTIALS_BASE64 environment variable not set.")
-            return None
+        # Check for raw JSON string in environment variable
+        creds_json_str = os.environ.get("GOOGLE_CREDENTIALS_JSON")
         
-        creds_json = base64.b64decode(encoded_creds).decode('utf-8')
-        creds_dict = json.loads(creds_json)
-        
-        creds = Credentials.from_service_account_info(creds_dict, scopes=SCOPES)
-        client = gspread.authorize(creds)
+        if creds_json_str:
+            # Parse the JSON string directly
+            creds_dict = json.loads(creds_json_str)
+            creds = Credentials.from_service_account_info(creds_dict, scopes=SCOPES)
+            client = gspread.authorize(creds)
+        else:
+            # Fallback: Check if the local file exists (for local testing or private repos)
+            local_file = 'liquid-crossing-318502-21504d159a43.json'
+            if os.path.exists(local_file):
+                print("Using local credentials file.")
+                client = gspread.service_account(filename=local_file)
+            else:
+                print("No credentials found. Please set GOOGLE_CREDENTIALS_JSON env var or provide the local file.")
+                return None
+                
         spreadsheet = client.open_by_key(SPREADSHEET_ID)
         worksheet = spreadsheet.worksheet(SHEET_NAME)
         return worksheet
