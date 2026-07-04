@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI OCR Date Code Monitor</title>
+    <meta name="description" content="AI-powered OCR for monitoring production date codes.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="header">
+        <div class="container header-content">
+            <h1 class="logo">AI OCR Monitor</h1>
+            <div class="status-indicator">
+                <span class="status-dot"></span>
+                <span id="connection-status">Ready</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="container main-grid">
+        <!-- Left Column: Camera and Controls -->
+        <section class="left-panel">
+            <div class="card camera-card">
+                <div class="camera-header">
+                    <h2>Live Camera</h2>
+                    <button id="switch-camera-btn" class="btn btn-secondary">Switch Camera</button>
+                </div>
+                <div class="video-container">
+                    <video id="video" autoplay playsinline></video>
+                    <canvas id="canvas" style="display:none;"></canvas>
+                    <div class="capture-overlay" id="capture-overlay"></div>
+                </div>
+                <div class="camera-actions">
+                    <button id="capture-btn" class="btn btn-primary btn-large">Capture & Analyze</button>
+                </div>
+            </div>
+
+            <div class="card controls-card">
+                <h2>Configuration</h2>
+                <form id="config-form" class="controls-grid">
+                    <div class="form-group">
+                        <label for="line">Production Line</label>
+                        <select id="line" name="line">
+                            <option value="N12">N12</option>
+                            <option value="N13">N13</option>
+                            <option value="N14">N14</option>
+                            <option value="N15">N15</option>
+                            <option value="N16">N16</option>
+                            <option value="N17">N17</option>
+                            <option value="N18">N18</option>
+                            <option value="N19">N19</option>
+                            <option value="N21">N21</option>
+                            <option value="N22">N22</option>
+                            <option value="N23">N23</option>
+                            <option value="N25">N25</option>
+                            <option value="N26">N26</option>
+                            <option value="N30">N30</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="front_back">Work Type</label>
+                        <select id="front_back" name="front_back">
+                            <option value="(L)YJJJCN12LN">(L)YJJJCN12LN</option>
+                            <option value="(L)YJJJCN12SL">(L)YJJJCN12SL</option>
+                            <option value="(L)DDMMYYCLN">(L)DDMMYYCLN</option>
+                            <option value="(L)DDMMYYCSL">(L)DDMMYYCSL</option>
+                            <option value="YYYYMMDDCLN">YYYYMMDDCLN</option>
+                            <option value="CPEXPYYYYMMDD">CPEXPYYYYMMDD</option>
+                            <option value="CPEXPMMYY">CPEXPMMYY</option>
+                            <option value="CP">CP</option>
+                            <option value="CP MM YY">CP MM YY</option>
+                            <option value="CPDDMMYY(当前日期)">CPDDMMYY(当前日期)</option>
+                            <option value="EXPYYYYMMDD">EXPYYYYMMDD</option>
+                            <option value="EXPMMYY(L)YJJJCN12SL">EXPMMYY(L)YJJJCN12SL</option>
+                            <option value="CPEXPMMYY(L)YJJJCN12LN">CPEXPMMYY(L)YJJJCN12LN</option>
+                            <option value="CPEXPYYYYMMDD(L)YJJJCN12LN">CPEXPYYYYMMDD(L)YJJJCN12LN</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="serial">Serial Number</label>
+                        <select id="serial" name="serial">
+                            <option value="1">1</option><option value="2">2</option><option value="3">3</option>
+                            <option value="4">4</option><option value="5">5</option><option value="6">6</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="validity">Validity</label>
+                        <select id="validity" name="validity">
+                            <option value="3年">3年</option><option value="2.5年">2.5年</option>
+                            <option value="2年">2年</option><option value="1.5年">1.5年</option>
+                            <option value="1年">1年</option><option value="35个月">35个月</option>
+                            <option value="30个月">30个月</option><option value="29个月">29个月</option>
+                            <option value="23个月">23个月</option><option value="18个月">18个月</option>
+                            <option value="17个月">17个月</option><option value="11个月">11个月</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="advance">Preparation</label>
+                        <select id="advance" name="advance">
+                            <option value="当天">当天</option><option value="提前1天">提前1天</option>
+                            <option value="提前2天">提前2天</option><option value="提前3天">提前3天</option>
+                            <option value="提前4天">提前4天</option><option value="提前5天">提前5天</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="shift">Shift</label>
+                        <select id="shift" name="shift">
+                            <option value="夜班">夜班</option>
+                            <option value="早班">早班</option>
+                            <option value="中班">中班</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <!-- Right Column: Results -->
+        <section class="right-panel">
+            <div class="card result-card">
+                <h2>Analysis Results</h2>
+                
+                <div id="loading-state" class="hidden">
+                    <div class="spinner"></div>
+                    <p>Analyzing image with AI...</p>
+                </div>
+
+                <div id="result-content" class="result-content">
+                    <div class="result-image-container">
+                        <img id="captured-image" src="" alt="Captured Image" style="display: none;">
+                        <div id="image-placeholder" class="placeholder">
+                            <p>Capture an image to see results</p>
+                        </div>
+                    </div>
+
+                    <div class="data-group highlight">
+                        <span class="label">Correct Answer</span>
+                        <div id="res-correct" class="value answer-value">-</div>
+                    </div>
+
+                    <div class="data-group highlight">
+                        <span class="label">OCR Result</span>
+                        <div id="res-ocr" class="value ocr-value">-</div>
+                    </div>
+
+                    <div class="stats-row">
+                        <div class="stat-box">
+                            <span class="label">Similarity</span>
+                            <div id="res-similarity" class="value">-</div>
+                        </div>
+                        <div class="stat-box">
+                            <span class="label">Sheet Sync</span>
+                            <div id="res-sync" class="value">-</div>
+                        </div>
+                    </div>
+
+                    <div class="ai-eval-group">
+                        <h3>AI Evaluation</h3>
+                        <ul class="eval-list">
+                            <li><span class="badge">L4</span> <span id="eval-4">-</span></li>
+                            <li><span class="badge">L3</span> <span id="eval-3">-</span></li>
+                            <li><span class="badge">L2</span> <span id="eval-2">-</span></li>
+                            <li><span class="badge">L1</span> <span id="eval-1">-</span></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>
